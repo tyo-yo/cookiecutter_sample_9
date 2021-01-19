@@ -1,0 +1,43 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Docker build
+        uses: whoan/docker-build-with-cache-action@v5
+        with:
+          username: tyo-yo
+
+          password: "${{ secrets.GITHUB_TOKEN }}"
+
+          image_name: tyo-yo/cookiecutter_sample_9/cookiecutter_sample_9
+          push_git_tag: true
+          registry: docker.pkg.github.com
+          dockerfile: Dockerfile
+
+      - name: Pytest
+        run: docker run --rm -v $PWD:/cookiecutter_sample_9 docker.pkg.github.com/tyo-yo/cookiecutter_sample_9/cookiecutter_sample_9 pytest
+
+      - name: Flake8 code style test
+        if: always()
+        run: docker run --rm -v $PWD:/cookiecutter_sample_9 docker.pkg.github.com/tyo-yo/cookiecutter_sample_9/cookiecutter_sample_9 flake8 --show-source
+
+      - name: Black code style test
+        if: always()
+        run: docker run --rm -v $PWD:/cookiecutter_sample_9 docker.pkg.github.com/tyo-yo/cookiecutter_sample_9/cookiecutter_sample_9 black --check cookiecutter_sample_9 tests
+
+      - name: Isort imports order test
+        if: always()
+        run: docker run --rm -v $PWD:/cookiecutter_sample_9 docker.pkg.github.com/tyo-yo/cookiecutter_sample_9/cookiecutter_sample_9 isort -c cookiecutter_sample_9/**.py tests/**.py
